@@ -25,7 +25,9 @@ Historical proposal/plan documents are intentionally not kept in the active repo
 
 ## Install / use
 
-This repository is meant to be used as an OpenClaw plugin source tree.
+This repository is meant to be used as an OpenClaw plugin source tree. Headcrab is a native OpenClaw plugin and expects the OpenClaw plugin runtime/SDK to load `index.js`.
+
+A raw standalone check such as `node -e "import('./index.js')"` outside OpenClaw can fail to resolve `openclaw/plugin-sdk/plugin-entry`; that is an expected OpenClaw runtime dependency for native plugins, not the correct standalone test path. Use OpenClaw plugin loading, or the development checks below, instead.
 
 Typical local plugin path intent:
 
@@ -42,6 +44,8 @@ Typical local plugin path intent:
 ```
 
 If you keep OpenClaw plugins inside another repository, add Headcrab as a git subtree or copy this tree into your plugin directory. Keep the repository root intact so `package.json`, `openclaw.plugin.json`, `index.js`, `src/`, `scripts/`, and `test/` stay together.
+
+Headcrab has no dependency on Delegate Mode Skill or any other OpenClaw skill. Its only OpenClaw-specific dependency is the expected OpenClaw runtime/SDK contract for native plugins.
 
 > The plugin id remains `delegate-mode-enforcer` for manifest/config compatibility. The product name is Headcrab.
 
@@ -107,7 +111,7 @@ npm run check
 npm run healthcheck
 ```
 
-There are no runtime npm dependencies in this package. Run `npm install` only if a future change adds a lockfile or dependencies that require it.
+There are no runtime npm dependencies in this package. Do not add `openclaw` as a package `dependency` or `devDependency` just to make a standalone Node import work; OpenClaw supplies the plugin SDK import when it loads native plugins. Run `npm install` only if a future change adds a lockfile or dependencies that require it.
 
 ## Telemetry and logging
 
