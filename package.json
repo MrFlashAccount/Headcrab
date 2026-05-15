@@ -1,0 +1,17 @@
+{
+  "name": "headcrab-openclaw-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Headcrab: a small OpenClaw plugin for worker-first delegation.",
+  "openclaw": {
+    "extensions": [
+      "./index.js"
+    ]
+  },
+  "scripts": {
+    "test": "node --test test/delegate-mode-enforcer.test.js",
+    "check": "node --check index.js && find src test scripts -name '*.js' -print0 | xargs -0 -n1 node --check",
+    "healthcheck": "node scripts/healthcheck.js"
+  }
+}

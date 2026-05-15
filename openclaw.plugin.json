@@ -1,0 +1,37 @@
+{
+  "id": "delegate-mode-enforcer",
+  "name": "Headcrab",
+  "description": "A small OpenClaw plugin for worker-first delegation.",
+  "activation": {
+    "onStartup": true
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "scope": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string",
+          "pattern": "^dm:(\\*|(?!any$)[^:]+)$"
+        }
+      },
+      "features": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "promptReminder": {
+            "type": "boolean"
+          },
+          "taskWrapping": {
+            "type": "boolean"
+          },
+          "forthrightCommunication": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}
