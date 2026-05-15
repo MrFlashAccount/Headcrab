@@ -156,6 +156,8 @@ export class OpenClawHookAdapter {
         return;
       }
 
+      // Adapter-boundary logs are deliberately coarse: never include raw hook params,
+      // task text, session identifiers, config payloads, or exception details.
       const payload = {
         plugin: PLUGIN_LOG_CODE,
         n: this.logCounter + 1,

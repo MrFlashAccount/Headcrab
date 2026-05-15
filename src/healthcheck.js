@@ -7,6 +7,7 @@ const HEALTHCHECK_SESSION_CONTEXT = Object.freeze({
   agentId: "main",
   sessionKey: "agent:main:telegram:direct:synthetic-healthcheck",
 });
+// Healthcheck fixtures stay synthetic because this command is safe to paste into logs/CI output.
 const MAX_PREPEND_CONTEXT_BYTES = 2_048;
 const MAX_WRAPPED_TASK_BYTES = 4_096;
 const MAX_LOG_CALLS = 8;

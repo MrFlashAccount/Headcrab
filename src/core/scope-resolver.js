@@ -1,4 +1,6 @@
 const WORKER_SESSION_KEY_PATTERN = /^agent:[^:]+:(subagent|acp|background-worker)(?::|$)/;
+// Scope is intentionally derived from the parent direct-message session key shape only;
+// child/worker keys must not inherit parent activation by accident.
 const DIRECT_SESSION_KEY_PATTERN = /^agent:(main|root):([^:]+):direct:([^:]+)$/;
 
 export const DIRECT_MESSAGE_ALL_SCOPE_SELECTOR = "dm:*";

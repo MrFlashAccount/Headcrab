@@ -6,6 +6,8 @@ import {
   WORKER_INSTRUCTIONS_BLOCK,
 } from "../constants.js";
 
+// Per-process signing keeps duplicate-wrapper detection tied to delimiters Headcrab built,
+// without persisting state or trusting arbitrary text that happens to contain marker strings.
 const TASK_SANDWICH_SIGNATURE_SECRET = randomBytes(16).toString("hex");
 const TASK_SANDWICH_BEGIN_PREFIX = TASK_SANDWICH_BEGIN_DELIMITER.slice(0, -3);
 const TASK_SANDWICH_END_PREFIX = TASK_SANDWICH_END_DELIMITER.slice(0, -3);
@@ -60,6 +62,7 @@ export class TaskSandwichBuilder {
     const workerInstructions = this.#buildWorkerInstructions({ forthrightCommunication });
     const { beginDelimiter, endDelimiter } = this.#createDelimiterPair(originalTask, workerInstructions);
 
+    // The original task is inserted verbatim between signed delimiters; all instructions are additive.
     return `${workerInstructions}\n${beginDelimiter}\n${originalTask}\n${endDelimiter}`;
   }
 
@@ -132,6 +135,8 @@ export class TaskSandwichBuilder {
       const beginDelimiter = buildDelimiter(TASK_SANDWICH_BEGIN_PREFIX, token, signature);
       const endDelimiter = buildDelimiter(TASK_SANDWICH_END_PREFIX, token, signature);
 
+      // If the task already contains the computed delimiter text, rotate the token instead of
+      // editing the task; byte preservation matters more than having the shortest delimiter.
       if (!collisionSource.includes(beginDelimiter) && !collisionSource.includes(endDelimiter)) {
         return { beginDelimiter, endDelimiter };
       }
