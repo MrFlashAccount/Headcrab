@@ -15,6 +15,14 @@ Use Headcrab when you want the main assistant to prefer delegation for larger wo
 
 It is not a scheduler, policy engine, permission system, or OpenClaw core patch. It only affects the plugin hooks it registers.
 
+## Architecture and source context
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) is the canonical product architecture contract.
+- [src/CONTEXT.md](./src/CONTEXT.md) describes the source container boundary.
+- [src/core/CONTEXT.md](./src/core/CONTEXT.md) describes the pure core boundary.
+
+Historical proposal/plan documents are intentionally not kept in the active repo; useful decisions are distilled into the architecture contract above.
+
 ## Install / use
 
 This repository is meant to be used as an OpenClaw plugin source tree.

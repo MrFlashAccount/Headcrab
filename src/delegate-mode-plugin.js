@@ -25,6 +25,7 @@ function cloneDefaultConfig() {
 }
 
 function failClosedConfig() {
+  // Invalid plugin-local config must disable behavior rather than guessing a broader scope.
   return {
     scope: [],
     features: {
