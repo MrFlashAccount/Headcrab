@@ -24,7 +24,7 @@ flowchart LR
   Parent --> Worker[Subagent / worker session]
 ```
 
-Headcrab does not create agents or execute worker work. It only adds a transient reminder and wraps `sessions_spawn.params.task` before OpenClaw dispatches the spawn.
+Headcrab does not create agents or execute worker work. It only adds a transient reminder and rewrites the Headcrab-scoped `sessions_spawn` call before OpenClaw dispatches the spawn: `params.task` may be wrapped once and `params.runTimeoutSeconds` is normalized/capped for that spawn only.
 
 ### Container
 
@@ -71,7 +71,10 @@ Dependencies point inward toward pure logic:
 Headcrab registers only:
 
 - `before_prompt_build`: returns one transient delegate reminder block for scoped parent direct-message sessions.
-- `before_tool_call`: wraps only `sessions_spawn.params.task` for scoped parent direct-message sessions.
+- `before_tool_call`: rewrites only Headcrab-scoped `sessions_spawn` params for scoped parent direct-message sessions.
+  - `params.task` is wrapped once with the task sandwich when it is not already sandwiched.
+  - `params.runTimeoutSeconds` is normalized for that same spawn only: missing, invalid, non-finite, `0`, negative, or other non-positive values become `1800`; values above `1800` are capped to `1800`; explicit positive values below `1800` are preserved.
+  - Already-sandwiched tasks are not rewrapped, but their `runTimeoutSeconds` value is still normalized/capped.
 
 It does **not**:
 

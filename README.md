@@ -2,10 +2,11 @@
 
 A small OpenClaw plugin for worker-first delegation.
 
-Headcrab helps a main OpenClaw session hand work to subagents cleanly. It does two narrow things for scoped direct-message parent sessions:
+Headcrab helps a main OpenClaw session hand work to subagents cleanly. It does three narrow things for scoped direct-message parent sessions:
 
 - adds one transient delegation reminder during `before_prompt_build`;
-- wraps only `sessions_spawn.params.task` during `before_tool_call` with a worker handoff block.
+- wraps only `sessions_spawn.params.task` during `before_tool_call` with a worker handoff block;
+- normalizes `sessions_spawn.params.runTimeoutSeconds` to a 30-minute default and 30-minute maximum.
 
 It does not block direct tools, persist delegation state, rewrite user messages, or add broad logging. The plugin is intentionally small and fail-closed.
 
@@ -76,7 +77,7 @@ Docs and tests use synthetic ids only, for example `dm:synthetic-direct-a`. Do n
 ### Feature flags
 
 - `promptReminder`: inject the transient reminder into scoped parent sessions.
-- `taskWrapping`: wrap `sessions_spawn.params.task` from scoped parent sessions.
+- `taskWrapping`: wrap `sessions_spawn.params.task` from scoped parent sessions and normalize `sessions_spawn.params.runTimeoutSeconds`.
 - `forthrightCommunication`: include the compact worker communication prefix in wrapped tasks.
 
 Missing config, `{}`, missing `features`, and missing individual feature booleans all default to enabled. Explicit `false` disables only that feature.
@@ -91,7 +92,10 @@ Unsupported keys include `targetDirectIds`, `targetDirectSessionKeys`, plugin-lo
 - Child/subagent sessions do not inherit scope.
 - Nested child spawns are not wrapped unless that child independently matches scope.
 - Non-`sessions_spawn` tools are unchanged.
-- Already wrapped tasks are not wrapped a second time.
+- `sessions_spawn.params.runTimeoutSeconds` defaults to `1800` when absent, invalid, or unlimited (`0`).
+- `sessions_spawn.params.runTimeoutSeconds` is capped at `1800` when a higher value is requested.
+- Explicit shorter positive `runTimeoutSeconds` values are preserved.
+- Already wrapped tasks are not wrapped a second time, but their `runTimeoutSeconds` is still normalized to the same 30-minute default/maximum rules.
 
 ## Healthcheck
 

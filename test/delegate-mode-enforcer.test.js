@@ -6,8 +6,10 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import {
+  DEFAULT_SUBAGENT_RUN_TIMEOUT_SECONDS,
   DELEGATE_REMINDER_BLOCK,
   DELEGATE_REMINDER_MARKER,
+  MAX_SUBAGENT_RUN_TIMEOUT_SECONDS,
   TASK_SANDWICH_BEGIN_DELIMITER,
   TASK_SANDWICH_END_DELIMITER,
   WORKER_INSTRUCTIONS_BLOCK,
@@ -576,6 +578,53 @@ test("scoped parent sessions_spawn.task is wrapped with the task sandwich", () =
 
   assertWrapped(result, originalTask);
   assert.equal(result.params.label, "delegate-mode-enforcer");
+  assert.equal(result.params.runTimeoutSeconds, DEFAULT_SUBAGENT_RUN_TIMEOUT_SECONDS);
+});
+
+test("sessions_spawn.runTimeoutSeconds preserves explicit shorter positive values", () => {
+  const adapter = createAdapter();
+  const result = adapter.beforeToolCall(
+    {
+      toolName: "sessions_spawn",
+      params: {
+        task: "Synthetic task",
+        runTimeoutSeconds: 900,
+      },
+    },
+    MAIN_SESSION_CONTEXT,
+  );
+
+  assertWrapped(result, "Synthetic task");
+  assert.equal(result.params.runTimeoutSeconds, 900);
+});
+
+test("sessions_spawn.runTimeoutSeconds caps unlimited and over-max values at 1800", () => {
+  const adapter = createAdapter();
+  const unlimited = adapter.beforeToolCall(
+    {
+      toolName: "sessions_spawn",
+      params: {
+        task: "Synthetic task",
+        runTimeoutSeconds: 0,
+      },
+    },
+    MAIN_SESSION_CONTEXT,
+  );
+  const overMax = adapter.beforeToolCall(
+    {
+      toolName: "sessions_spawn",
+      params: {
+        task: "Synthetic task",
+        runTimeoutSeconds: 3600,
+      },
+    },
+    MAIN_SESSION_CONTEXT,
+  );
+
+  assertWrapped(unlimited, "Synthetic task");
+  assertWrapped(overMax, "Synthetic task");
+  assert.equal(unlimited.params.runTimeoutSeconds, MAX_SUBAGENT_RUN_TIMEOUT_SECONDS);
+  assert.equal(overMax.params.runTimeoutSeconds, MAX_SUBAGENT_RUN_TIMEOUT_SECONDS);
 });
 
 test("unscoped parent contexts do not wrap sessions_spawn.task", () => {
@@ -925,6 +974,53 @@ test("already sandwiched sessions_spawn.task is not wrapped again", () => {
   assert.equal(second, first);
   assert.equal(countTaskSandwichDelimiters(second.task, "BEGIN"), 1);
   assert.equal(countTaskSandwichDelimiters(second.task, "END"), 1);
+});
+
+test("already sandwiched sessions_spawn.task normalizes missing and invalid runTimeoutSeconds", () => {
+  const transformer = new SpawnTaskTransformer();
+  const wrapped = transformer.transform({
+    toolName: "sessions_spawn",
+    params: { task: "Synthetic task", mode: "run" },
+  });
+
+  for (const runTimeoutSeconds of [undefined, 0, 3600, NaN, Infinity, -1, "900", null]) {
+    const result = transformer.transform({
+      toolName: "sessions_spawn",
+      params: {
+        ...wrapped,
+        runTimeoutSeconds,
+      },
+    });
+
+    assert.notEqual(result, wrapped);
+    assert.equal(result.task, wrapped.task);
+    assert.equal(result.mode, wrapped.mode);
+    assert.equal(result.runTimeoutSeconds, DEFAULT_SUBAGENT_RUN_TIMEOUT_SECONDS);
+    assert.equal(countTaskSandwichDelimiters(result.task, "BEGIN"), 1);
+    assert.equal(countTaskSandwichDelimiters(result.task, "END"), 1);
+  }
+});
+
+test("already sandwiched sessions_spawn.task preserves explicit shorter positive runTimeoutSeconds", () => {
+  const transformer = new SpawnTaskTransformer();
+  const wrapped = transformer.transform({
+    toolName: "sessions_spawn",
+    params: { task: "Synthetic task", mode: "run" },
+  });
+  const result = transformer.transform({
+    toolName: "sessions_spawn",
+    params: {
+      ...wrapped,
+      runTimeoutSeconds: 900,
+    },
+  });
+
+  assert.notEqual(result, wrapped);
+  assert.equal(result.task, wrapped.task);
+  assert.equal(result.mode, wrapped.mode);
+  assert.equal(result.runTimeoutSeconds, 900);
+  assert.equal(countTaskSandwichDelimiters(result.task, "BEGIN"), 1);
+  assert.equal(countTaskSandwichDelimiters(result.task, "END"), 1);
 });
 
 test("tampered signed wrapper is rejected and re-wrapped", () => {

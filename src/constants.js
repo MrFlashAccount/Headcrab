@@ -9,6 +9,9 @@ export const DELEGATE_REMINDER_BLOCK = [
 export const TASK_SANDWICH_BEGIN_DELIMITER = "<<<BEGIN_ORIGINAL_TASK>>>";
 export const TASK_SANDWICH_END_DELIMITER = "<<<END_ORIGINAL_TASK>>>";
 
+export const DEFAULT_SUBAGENT_RUN_TIMEOUT_SECONDS = 1800;
+export const MAX_SUBAGENT_RUN_TIMEOUT_SECONDS = 1800;
+
 export const WORKER_INSTRUCTIONS_BLOCK = [
   "Worker instructions:",
   "- Complete only the delegated slice.",
