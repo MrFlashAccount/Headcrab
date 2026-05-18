@@ -32,14 +32,23 @@ export class SpawnTaskTransformer {
       return params;
     }
 
+    const normalizedRunTimeoutSeconds = normalizeRunTimeoutSeconds(params.runTimeoutSeconds);
+
     if (this.taskSandwichBuilder.isBuiltTask(params.task)) {
-      return params;
+      if (params.runTimeoutSeconds === normalizedRunTimeoutSeconds) {
+        return params;
+      }
+
+      return {
+        ...params,
+        runTimeoutSeconds: normalizedRunTimeoutSeconds,
+      };
     }
 
     return {
       ...params,
       task: this.taskSandwichBuilder.build(params.task, { forthrightCommunication }),
-      runTimeoutSeconds: normalizeRunTimeoutSeconds(params.runTimeoutSeconds),
+      runTimeoutSeconds: normalizedRunTimeoutSeconds,
     };
   }
 }

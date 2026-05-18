@@ -95,7 +95,7 @@ Unsupported keys include `targetDirectIds`, `targetDirectSessionKeys`, plugin-lo
 - `sessions_spawn.params.runTimeoutSeconds` defaults to `1800` when absent, invalid, or unlimited (`0`).
 - `sessions_spawn.params.runTimeoutSeconds` is capped at `1800` when a higher value is requested.
 - Explicit shorter positive `runTimeoutSeconds` values are preserved.
-- Already wrapped tasks are not wrapped a second time.
+- Already wrapped tasks are not wrapped a second time, but their `runTimeoutSeconds` is still normalized to the same 30-minute default/maximum rules.
 
 ## Healthcheck
 

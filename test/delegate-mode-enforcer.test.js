@@ -976,6 +976,53 @@ test("already sandwiched sessions_spawn.task is not wrapped again", () => {
   assert.equal(countTaskSandwichDelimiters(second.task, "END"), 1);
 });
 
+test("already sandwiched sessions_spawn.task normalizes missing and invalid runTimeoutSeconds", () => {
+  const transformer = new SpawnTaskTransformer();
+  const wrapped = transformer.transform({
+    toolName: "sessions_spawn",
+    params: { task: "Synthetic task", mode: "run" },
+  });
+
+  for (const runTimeoutSeconds of [undefined, 0, 3600, NaN, Infinity, -1, "900", null]) {
+    const result = transformer.transform({
+      toolName: "sessions_spawn",
+      params: {
+        ...wrapped,
+        runTimeoutSeconds,
+      },
+    });
+
+    assert.notEqual(result, wrapped);
+    assert.equal(result.task, wrapped.task);
+    assert.equal(result.mode, wrapped.mode);
+    assert.equal(result.runTimeoutSeconds, DEFAULT_SUBAGENT_RUN_TIMEOUT_SECONDS);
+    assert.equal(countTaskSandwichDelimiters(result.task, "BEGIN"), 1);
+    assert.equal(countTaskSandwichDelimiters(result.task, "END"), 1);
+  }
+});
+
+test("already sandwiched sessions_spawn.task preserves explicit shorter positive runTimeoutSeconds", () => {
+  const transformer = new SpawnTaskTransformer();
+  const wrapped = transformer.transform({
+    toolName: "sessions_spawn",
+    params: { task: "Synthetic task", mode: "run" },
+  });
+  const result = transformer.transform({
+    toolName: "sessions_spawn",
+    params: {
+      ...wrapped,
+      runTimeoutSeconds: 900,
+    },
+  });
+
+  assert.notEqual(result, wrapped);
+  assert.equal(result.task, wrapped.task);
+  assert.equal(result.mode, wrapped.mode);
+  assert.equal(result.runTimeoutSeconds, 900);
+  assert.equal(countTaskSandwichDelimiters(result.task, "BEGIN"), 1);
+  assert.equal(countTaskSandwichDelimiters(result.task, "END"), 1);
+});
+
 test("tampered signed wrapper is rejected and re-wrapped", () => {
   const taskSandwichBuilder = new TaskSandwichBuilder();
   const transformer = new SpawnTaskTransformer({ taskSandwichBuilder });
