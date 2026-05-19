@@ -1,9 +1,12 @@
 import { DelegateReminderRenderer } from "./core/delegate-reminder-renderer.js";
 import { ScopeResolver } from "./core/scope-resolver.js";
 import { SpawnTaskTransformer } from "./core/spawn-task-transformer.js";
-import { TASK_SANDWICH_BEGIN_DELIMITER, TASK_SANDWICH_END_DELIMITER } from "./constants.js";
+import {
+  TASK_SANDWICH_BEGIN_DELIMITER,
+  TASK_SANDWICH_END_DELIMITER,
+} from "./constants.js";
 
-const PLUGIN_LOG_CODE = "delegate-mode-enforcer";
+const PLUGIN_LOG_CODE = "headcrab";
 
 const HOOKS = Object.freeze({
   BEFORE_PROMPT_BUILD: "before_prompt_build",
@@ -43,7 +46,10 @@ function isObjectRecord(value) {
 }
 
 function isAlreadySandwiched(task) {
-  return task.includes(TASK_SANDWICH_BEGIN_DELIMITER) && task.includes(TASK_SANDWICH_END_DELIMITER);
+  return (
+    task.includes(TASK_SANDWICH_BEGIN_DELIMITER) &&
+    task.includes(TASK_SANDWICH_END_DELIMITER)
+  );
 }
 
 function getBeforeToolCallSkipReason(event) {
@@ -88,12 +94,22 @@ export class OpenClawHookAdapter {
   beforePromptBuild(_event, ctx = {}) {
     try {
       if (!this.features.promptReminder) {
-        this.#log("debug", HOOKS.BEFORE_PROMPT_BUILD, LOG_OUTCOMES.SKIPPED, LOG_REASONS.FEATURE_DISABLED);
+        this.#log(
+          "debug",
+          HOOKS.BEFORE_PROMPT_BUILD,
+          LOG_OUTCOMES.SKIPPED,
+          LOG_REASONS.FEATURE_DISABLED
+        );
         return undefined;
       }
 
       if (!this.scopeResolver.isScopedParentSession(ctx)) {
-        this.#log("debug", HOOKS.BEFORE_PROMPT_BUILD, LOG_OUTCOMES.SKIPPED, LOG_REASONS.SCOPE_NOT_TARGET);
+        this.#log(
+          "debug",
+          HOOKS.BEFORE_PROMPT_BUILD,
+          LOG_OUTCOMES.SKIPPED,
+          LOG_REASONS.SCOPE_NOT_TARGET
+        );
         return undefined;
       }
 
@@ -105,11 +121,16 @@ export class OpenClawHookAdapter {
         "info",
         HOOKS.BEFORE_PROMPT_BUILD,
         LOG_OUTCOMES.APPLIED,
-        LOG_REASONS.DELEGATE_REMINDER_INJECTED,
+        LOG_REASONS.DELEGATE_REMINDER_INJECTED
       );
       return result;
     } catch (error) {
-      this.#log("error", HOOKS.BEFORE_PROMPT_BUILD, LOG_OUTCOMES.ERROR, LOG_REASONS.HOOK_EXCEPTION);
+      this.#log(
+        "error",
+        HOOKS.BEFORE_PROMPT_BUILD,
+        LOG_OUTCOMES.ERROR,
+        LOG_REASONS.HOOK_EXCEPTION
+      );
       throw error;
     }
   }
@@ -117,33 +138,62 @@ export class OpenClawHookAdapter {
   beforeToolCall(event = {}, ctx = {}) {
     try {
       if (!this.features.taskWrapping) {
-        this.#log("debug", HOOKS.BEFORE_TOOL_CALL, LOG_OUTCOMES.SKIPPED, LOG_REASONS.FEATURE_DISABLED);
+        this.#log(
+          "debug",
+          HOOKS.BEFORE_TOOL_CALL,
+          LOG_OUTCOMES.SKIPPED,
+          LOG_REASONS.FEATURE_DISABLED
+        );
         return undefined;
       }
 
       if (!this.scopeResolver.isScopedParentSession(ctx)) {
-        this.#log("debug", HOOKS.BEFORE_TOOL_CALL, LOG_OUTCOMES.SKIPPED, LOG_REASONS.SCOPE_NOT_TARGET);
+        this.#log(
+          "debug",
+          HOOKS.BEFORE_TOOL_CALL,
+          LOG_OUTCOMES.SKIPPED,
+          LOG_REASONS.SCOPE_NOT_TARGET
+        );
         return undefined;
       }
 
-      const eventParams = event && typeof event === "object" ? event.params : undefined;
+      const eventParams =
+        event && typeof event === "object" ? event.params : undefined;
       const transformedParams = this.spawnTaskTransformer.transform(event, {
         forthrightCommunication: this.features.forthrightCommunication,
       });
 
       if (!transformedParams || transformedParams === eventParams) {
-        this.#log("debug", HOOKS.BEFORE_TOOL_CALL, LOG_OUTCOMES.SKIPPED, getBeforeToolCallSkipReason(event));
+        this.#log(
+          "debug",
+          HOOKS.BEFORE_TOOL_CALL,
+          LOG_OUTCOMES.SKIPPED,
+          getBeforeToolCallSkipReason(event)
+        );
         return undefined;
       }
 
-      this.#log("info", HOOKS.BEFORE_TOOL_CALL, LOG_OUTCOMES.APPLIED, LOG_REASONS.TASK_SANDWICH_APPLIED, {
-        variant: this.features.forthrightCommunication ? "forthright" : "legacy",
-      });
+      this.#log(
+        "info",
+        HOOKS.BEFORE_TOOL_CALL,
+        LOG_OUTCOMES.APPLIED,
+        LOG_REASONS.TASK_SANDWICH_APPLIED,
+        {
+          variant: this.features.forthrightCommunication
+            ? "forthright"
+            : "legacy",
+        }
+      );
       return {
         params: transformedParams,
       };
     } catch (error) {
-      this.#log("error", HOOKS.BEFORE_TOOL_CALL, LOG_OUTCOMES.ERROR, LOG_REASONS.HOOK_EXCEPTION);
+      this.#log(
+        "error",
+        HOOKS.BEFORE_TOOL_CALL,
+        LOG_OUTCOMES.ERROR,
+        LOG_REASONS.HOOK_EXCEPTION
+      );
       throw error;
     }
   }

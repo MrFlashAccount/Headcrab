@@ -1,6 +1,6 @@
 # Headcrab Architecture
 
-Headcrab is the `delegate-mode-enforcer` OpenClaw plugin: a small middleware layer that nudges scoped direct-message parent sessions toward worker-first delegation.
+Headcrab is an OpenClaw plugin: a small middleware layer that nudges scoped direct-message parent sessions toward worker-first delegation.
 
 ## Selected architecture decision
 

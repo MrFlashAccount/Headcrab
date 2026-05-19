@@ -30,7 +30,6 @@ If a dependency or lockfile is introduced later, install dependencies as needed 
 ## OpenClaw compatibility
 
 - Preserve OpenClaw plugin manifest compatibility.
-- The plugin id is currently `delegate-mode-enforcer`; do not rename it casually because existing configs may reference it.
 - Product/docs name may be Headcrab.
 - Keep `package.json` `openclaw.extensions` pointing at `./index.js` unless the entrypoint changes intentionally.
 

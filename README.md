@@ -35,7 +35,7 @@ Typical local plugin path intent:
 ```jsonc
 {
   "plugins": {
-    "delegate-mode-enforcer": {
+    "headcrab": {
       "enabled": true,
       "path": "/path/to/Headcrab",
       "config": {}
@@ -47,8 +47,6 @@ Typical local plugin path intent:
 If you keep OpenClaw plugins inside another repository, add Headcrab as a git subtree or copy this tree into your plugin directory. Keep the repository root intact so `package.json`, `openclaw.plugin.json`, `index.js`, `src/`, `scripts/`, and `test/` stay together.
 
 Headcrab has no dependency on Delegate Mode Skill or any other OpenClaw skill. Its only OpenClaw-specific dependency is the expected OpenClaw runtime/SDK contract for native plugins.
-
-> The plugin id remains `delegate-mode-enforcer` for manifest/config compatibility. The product name is Headcrab.
 
 ## Configuration
 
