@@ -15,7 +15,10 @@ import {
   WORKER_INSTRUCTIONS_BLOCK,
 } from "../src/constants.js";
 import { DelegateReminderRenderer } from "../src/core/delegate-reminder-renderer.js";
-import { DIRECT_MESSAGE_ALL_SCOPE_SELECTOR, ScopeResolver } from "../src/core/scope-resolver.js";
+import {
+  DIRECT_MESSAGE_ALL_SCOPE_SELECTOR,
+  ScopeResolver,
+} from "../src/core/scope-resolver.js";
 import { SpawnTaskTransformer } from "../src/core/spawn-task-transformer.js";
 import {
   FORTHRIGHT_WORKER_PREFIX,
@@ -31,7 +34,9 @@ import { runDelegateModeHealthcheck } from "../src/healthcheck.js";
 import { OpenClawHookAdapter } from "../src/openclaw-hook-adapter.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const manifest = JSON.parse(readFileSync(join(__dirname, "../openclaw.plugin.json"), "utf8"));
+const manifest = JSON.parse(
+  readFileSync(join(__dirname, "../openclaw.plugin.json"), "utf8")
+);
 
 const SYNTHETIC_DIRECT_ID = "synthetic-direct-a";
 const OTHER_SYNTHETIC_DIRECT_ID = "synthetic-direct-b";
@@ -64,7 +69,10 @@ const BACKGROUND_WORKER_CONTEXT = {
 const UNSCOPED_CONTEXTS = [
   {
     name: "group main session",
-    ctx: { agentId: "main", sessionKey: "agent:main:telegram:group:synthetic-chat" },
+    ctx: {
+      agentId: "main",
+      sessionKey: "agent:main:telegram:group:synthetic-chat",
+    },
   },
   {
     name: "background worker session",
@@ -92,8 +100,12 @@ function createAdapter({ pluginConfig, logger } = {}) {
   });
 
   return {
-    beforePromptBuild: registrations.find(({ hookName }) => hookName === "before_prompt_build").handler,
-    beforeToolCall: registrations.find(({ hookName }) => hookName === "before_tool_call").handler,
+    beforePromptBuild: registrations.find(
+      ({ hookName }) => hookName === "before_prompt_build"
+    ).handler,
+    beforeToolCall: registrations.find(
+      ({ hookName }) => hookName === "before_tool_call"
+    ).handler,
   };
 }
 
@@ -102,13 +114,18 @@ function countOccurrences(input, needle) {
 }
 
 function countTaskSandwichDelimiters(input, type) {
-  const pattern = new RegExp(`<<<${type}_ORIGINAL_TASK:[a-f0-9-]+\\.[a-f0-9]{16}>>>`, "g");
+  const pattern = new RegExp(
+    `<<<${type}_ORIGINAL_TASK:[a-f0-9-]+\\.[a-f0-9]{16}>>>`,
+    "g"
+  );
   return input.match(pattern)?.length ?? 0;
 }
 
 function extractTaskSandwichDelimiterLines(taskSandwich) {
   const lines = taskSandwich.split("\n");
-  const beginLine = lines.find((line) => /^<<<BEGIN_ORIGINAL_TASK:[a-f0-9-]+\.[a-f0-9]{16}>>>$/.test(line));
+  const beginLine = lines.find((line) =>
+    /^<<<BEGIN_ORIGINAL_TASK:[a-f0-9-]+\.[a-f0-9]{16}>>>$/.test(line)
+  );
   const endLine = lines[lines.length - 1];
 
   assert.notEqual(beginLine, undefined, "begin delimiter should exist");
@@ -118,7 +135,8 @@ function extractTaskSandwichDelimiterLines(taskSandwich) {
 }
 
 function extractOriginalTask(taskSandwich) {
-  const { beginLine, endLine } = extractTaskSandwichDelimiterLines(taskSandwich);
+  const { beginLine, endLine } =
+    extractTaskSandwichDelimiterLines(taskSandwich);
   const startToken = `${beginLine}\n`;
   const endToken = `\n${endLine}`;
   const startIndex = taskSandwich.indexOf(startToken);
@@ -143,8 +161,11 @@ function createCapturingLogger() {
 
 function assertSanitizedLogCall(call, expected) {
   assert.deepEqual(call, expected);
-  assert.deepEqual(Object.keys(call.payload).sort(), Object.keys(expected.payload).sort());
-  assert.equal(call.payload.plugin, "delegate-mode-enforcer");
+  assert.deepEqual(
+    Object.keys(call.payload).sort(),
+    Object.keys(expected.payload).sort()
+  );
+  assert.equal(call.payload.plugin, "headcrab");
   assert.equal(Number.isSafeInteger(call.payload.n), true);
   assert.equal(call.payload.n > 0, true);
   assert.equal(call.payload.stage, "hook");
@@ -177,7 +198,10 @@ function validateConfigAgainstManifestSchema(value) {
   }
 
   if (Object.hasOwn(value, "scope")) {
-    if (!Array.isArray(value.scope) || value.scope.length < schema.properties.scope.minItems) {
+    if (
+      !Array.isArray(value.scope) ||
+      value.scope.length < schema.properties.scope.minItems
+    ) {
       return false;
     }
 
@@ -191,7 +215,11 @@ function validateConfigAgainstManifestSchema(value) {
   }
 
   if (Object.hasOwn(value, "features")) {
-    if (!value.features || typeof value.features !== "object" || Array.isArray(value.features)) {
+    if (
+      !value.features ||
+      typeof value.features !== "object" ||
+      Array.isArray(value.features)
+    ) {
       return false;
     }
 
@@ -199,7 +227,10 @@ function validateConfigAgainstManifestSchema(value) {
       if (!Object.hasOwn(schema.properties.features.properties, key)) {
         return false;
       }
-      if (typeof value.features[key] !== schema.properties.features.properties[key].type) {
+      if (
+        typeof value.features[key] !==
+        schema.properties.features.properties[key].type
+      ) {
         return false;
       }
     }
@@ -211,10 +242,14 @@ function validateConfigAgainstManifestSchema(value) {
 function assertWrapped(result, originalTask) {
   assert.ok(result);
   assert.equal(
-    result.params.task.startsWith(`${FORTHRIGHT_WORKER_PREFIX}\n${INSTRUCTION_HIERARCHY_LINE}\n${WORKER_INSTRUCTIONS_BLOCK}\n`),
-    true,
+    result.params.task.startsWith(
+      `${FORTHRIGHT_WORKER_PREFIX}\n${INSTRUCTION_HIERARCHY_LINE}\n${WORKER_INSTRUCTIONS_BLOCK}\n`
+    ),
+    true
   );
-  const { beginLine, endLine } = extractTaskSandwichDelimiterLines(result.params.task);
+  const { beginLine, endLine } = extractTaskSandwichDelimiterLines(
+    result.params.task
+  );
   assert.equal(originalTask.includes(beginLine), false);
   assert.equal(originalTask.includes(endLine), false);
   assert.equal(extractOriginalTask(result.params.task), originalTask);
@@ -222,9 +257,16 @@ function assertWrapped(result, originalTask) {
 
 function assertLegacyWrapped(result, originalTask) {
   assert.ok(result);
-  assert.equal(result.params.task.startsWith(`${INSTRUCTION_HIERARCHY_LINE}\n${WORKER_INSTRUCTIONS_BLOCK}\n`), true);
+  assert.equal(
+    result.params.task.startsWith(
+      `${INSTRUCTION_HIERARCHY_LINE}\n${WORKER_INSTRUCTIONS_BLOCK}\n`
+    ),
+    true
+  );
   assert.equal(result.params.task.includes(FORTHRIGHT_WORKER_PREFIX), false);
-  const { beginLine, endLine } = extractTaskSandwichDelimiterLines(result.params.task);
+  const { beginLine, endLine } = extractTaskSandwichDelimiterLines(
+    result.params.task
+  );
   assert.equal(originalTask.includes(beginLine), false);
   assert.equal(originalTask.includes(endLine), false);
   assert.equal(extractOriginalTask(result.params.task), originalTask);
@@ -235,7 +277,11 @@ test("normalizer applies defaults when plugin config is missing or empty", () =>
     valid: true,
     config: {
       scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
-      features: { promptReminder: true, taskWrapping: true, forthrightCommunication: true },
+      features: {
+        promptReminder: true,
+        taskWrapping: true,
+        forthrightCommunication: true,
+      },
     },
   });
 
@@ -243,11 +289,17 @@ test("normalizer applies defaults when plugin config is missing or empty", () =>
     valid: true,
     config: {
       scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
-      features: { promptReminder: true, taskWrapping: true, forthrightCommunication: true },
+      features: {
+        promptReminder: true,
+        taskWrapping: true,
+        forthrightCommunication: true,
+      },
     },
   });
 
-  assert.deepEqual(DEFAULT_DELEGATE_MODE_CONFIG.scope, [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR]);
+  assert.deepEqual(DEFAULT_DELEGATE_MODE_CONFIG.scope, [
+    DIRECT_MESSAGE_ALL_SCOPE_SELECTOR,
+  ]);
   assert.deepEqual(DEFAULT_DELEGATE_MODE_CONFIG.features, {
     promptReminder: true,
     taskWrapping: true,
@@ -256,47 +308,84 @@ test("normalizer applies defaults when plugin config is missing or empty", () =>
 });
 
 test("normalizer overlays partial features and lets explicit false disable only one feature", () => {
-  assert.deepEqual(normalizeDelegateModeConfig({ features: { promptReminder: false } }), {
-    valid: true,
-    config: {
-      scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
-      features: { promptReminder: false, taskWrapping: true, forthrightCommunication: true },
-    },
-  });
+  assert.deepEqual(
+    normalizeDelegateModeConfig({ features: { promptReminder: false } }),
+    {
+      valid: true,
+      config: {
+        scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
+        features: {
+          promptReminder: false,
+          taskWrapping: true,
+          forthrightCommunication: true,
+        },
+      },
+    }
+  );
 
-  assert.deepEqual(normalizeDelegateModeConfig({ features: { taskWrapping: false } }), {
-    valid: true,
-    config: {
-      scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
-      features: { promptReminder: true, taskWrapping: false, forthrightCommunication: true },
-    },
-  });
+  assert.deepEqual(
+    normalizeDelegateModeConfig({ features: { taskWrapping: false } }),
+    {
+      valid: true,
+      config: {
+        scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
+        features: {
+          promptReminder: true,
+          taskWrapping: false,
+          forthrightCommunication: true,
+        },
+      },
+    }
+  );
 
-  assert.deepEqual(normalizeDelegateModeConfig({ features: { forthrightCommunication: false } }), {
-    valid: true,
-    config: {
-      scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
-      features: { promptReminder: true, taskWrapping: true, forthrightCommunication: false },
-    },
-  });
+  assert.deepEqual(
+    normalizeDelegateModeConfig({
+      features: { forthrightCommunication: false },
+    }),
+    {
+      valid: true,
+      config: {
+        scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
+        features: {
+          promptReminder: true,
+          taskWrapping: true,
+          forthrightCommunication: false,
+        },
+      },
+    }
+  );
 });
 
 test("normalizer uses user-provided scope as replacement for the default scope", () => {
-  assert.deepEqual(normalizeDelegateModeConfig({ scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR] }), {
-    valid: true,
-    config: {
-      scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
-      features: { promptReminder: true, taskWrapping: true, forthrightCommunication: true },
-    },
-  });
+  assert.deepEqual(
+    normalizeDelegateModeConfig({ scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR] }),
+    {
+      valid: true,
+      config: {
+        scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
+        features: {
+          promptReminder: true,
+          taskWrapping: true,
+          forthrightCommunication: true,
+        },
+      },
+    }
+  );
 
-  assert.deepEqual(normalizeDelegateModeConfig({ scope: [`dm:${SYNTHETIC_DIRECT_ID}`] }), {
-    valid: true,
-    config: {
-      scope: [`dm:${SYNTHETIC_DIRECT_ID}`],
-      features: { promptReminder: true, taskWrapping: true, forthrightCommunication: true },
-    },
-  });
+  assert.deepEqual(
+    normalizeDelegateModeConfig({ scope: [`dm:${SYNTHETIC_DIRECT_ID}`] }),
+    {
+      valid: true,
+      config: {
+        scope: [`dm:${SYNTHETIC_DIRECT_ID}`],
+        features: {
+          promptReminder: true,
+          taskWrapping: true,
+          forthrightCommunication: true,
+        },
+      },
+    }
+  );
 });
 
 test("normalizer rejects old keys, unknown keys, unknown selectors, empty scope, and invalid shapes", () => {
@@ -306,7 +395,9 @@ test("normalizer rejects old keys, unknown keys, unknown selectors, empty scope,
     "enabled",
     { enabled: true },
     { targetDirectIds: ["synthetic-direct"] },
-    { targetDirectSessionKeys: ["agent:main:telegram:direct:synthetic-direct"] },
+    {
+      targetDirectSessionKeys: ["agent:main:telegram:direct:synthetic-direct"],
+    },
     { directToolBlocking: true },
     { logging: { enabled: true } },
     { unknown: true },
@@ -328,43 +419,107 @@ test("normalizer rejects old keys, unknown keys, unknown selectors, empty scope,
   for (const invalidConfig of invalidConfigs) {
     assert.deepEqual(normalizeDelegateModeConfig(invalidConfig), {
       valid: false,
-      config: { scope: [], features: { promptReminder: false, taskWrapping: false, forthrightCommunication: false } },
+      config: {
+        scope: [],
+        features: {
+          promptReminder: false,
+          taskWrapping: false,
+          forthrightCommunication: false,
+        },
+      },
     });
   }
 });
 
 test("manifest config schema accepts the supported surface and rejects removed keys", () => {
   assert.equal(validateConfigAgainstManifestSchema({}), true);
-  assert.equal(validateConfigAgainstManifestSchema({ scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR] }), true);
-  assert.equal(validateConfigAgainstManifestSchema({ scope: [`dm:${SYNTHETIC_DIRECT_ID}`] }), true);
-  assert.equal(validateConfigAgainstManifestSchema({ features: { promptReminder: false } }), true);
-  assert.equal(validateConfigAgainstManifestSchema({ features: { taskWrapping: false } }), true);
-  assert.equal(validateConfigAgainstManifestSchema({ features: { forthrightCommunication: false } }), true);
   assert.equal(
     validateConfigAgainstManifestSchema({
       scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
-      features: { promptReminder: true, taskWrapping: true, forthrightCommunication: true },
     }),
-    true,
+    true
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({
+      scope: [`dm:${SYNTHETIC_DIRECT_ID}`],
+    }),
+    true
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({
+      features: { promptReminder: false },
+    }),
+    true
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({ features: { taskWrapping: false } }),
+    true
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({
+      features: { forthrightCommunication: false },
+    }),
+    true
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({
+      scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
+      features: {
+        promptReminder: true,
+        taskWrapping: true,
+        forthrightCommunication: true,
+      },
+    }),
+    true
   );
 
   assert.equal(validateConfigAgainstManifestSchema({ enabled: true }), false);
-  assert.equal(validateConfigAgainstManifestSchema({ targetDirectIds: ["synthetic-direct"] }), false);
+  assert.equal(
+    validateConfigAgainstManifestSchema({
+      targetDirectIds: ["synthetic-direct"],
+    }),
+    false
+  );
   assert.equal(
     validateConfigAgainstManifestSchema({
       targetDirectSessionKeys: ["agent:main:telegram:direct:synthetic-direct"],
     }),
-    false,
+    false
   );
-  assert.equal(validateConfigAgainstManifestSchema({ directToolBlocking: true }), false);
+  assert.equal(
+    validateConfigAgainstManifestSchema({ directToolBlocking: true }),
+    false
+  );
   assert.equal(validateConfigAgainstManifestSchema({ scope: [] }), false);
   assert.equal(validateConfigAgainstManifestSchema({ scope: ["dm:"] }), false);
-  assert.equal(validateConfigAgainstManifestSchema({ scope: ["dm:any"] }), false);
-  assert.equal(validateConfigAgainstManifestSchema({ scope: ["dm:synthetic:bad"] }), false);
-  assert.equal(validateConfigAgainstManifestSchema({ scope: ["unknown-selector"] }), false);
-  assert.equal(validateConfigAgainstManifestSchema({ features: { promptReminder: "false" } }), false);
-  assert.equal(validateConfigAgainstManifestSchema({ features: { forthrightCommunication: "false" } }), false);
-  assert.equal(validateConfigAgainstManifestSchema({ features: { unknown: true } }), false);
+  assert.equal(
+    validateConfigAgainstManifestSchema({ scope: ["dm:any"] }),
+    false
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({ scope: ["dm:synthetic:bad"] }),
+    false
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({ scope: ["unknown-selector"] }),
+    false
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({
+      features: { promptReminder: "false" },
+    }),
+    false
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({
+      features: { forthrightCommunication: "false" },
+    }),
+    false
+  );
+  assert.equal(
+    validateConfigAgainstManifestSchema({ features: { unknown: true } }),
+    false
+  );
 });
 
 test("reminder renderer returns a stable single block", () => {
@@ -377,28 +532,42 @@ test("reminder renderer returns a stable single block", () => {
 test("repeated prompt builds produce independent single blocks with no accumulation", () => {
   const adapter = createAdapter();
   const builds = Array.from({ length: 3 }, () =>
-    adapter.beforePromptBuild({ prompt: "Synthetic prompt", messages: [] }, MAIN_SESSION_CONTEXT),
+    adapter.beforePromptBuild(
+      { prompt: "Synthetic prompt", messages: [] },
+      MAIN_SESSION_CONTEXT
+    )
   );
 
   assert.equal(builds.length, 3);
 
   for (const build of builds) {
     assert.deepEqual(build, { prependContext: DELEGATE_REMINDER_BLOCK });
-    assert.equal(countOccurrences(build.prependContext, DELEGATE_REMINDER_MARKER), 1);
+    assert.equal(
+      countOccurrences(build.prependContext, DELEGATE_REMINDER_MARKER),
+      1
+    );
   }
 });
 
 test("reminder marker appears exactly once in the returned block", () => {
   const adapter = createAdapter();
-  const result = adapter.beforePromptBuild({ prompt: "Hello", messages: [] }, MAIN_SESSION_CONTEXT);
+  const result = adapter.beforePromptBuild(
+    { prompt: "Hello", messages: [] },
+    MAIN_SESSION_CONTEXT
+  );
 
   assert.ok(result);
-  assert.equal(countOccurrences(result.prependContext, DELEGATE_REMINDER_MARKER), 1);
+  assert.equal(
+    countOccurrences(result.prependContext, DELEGATE_REMINDER_MARKER),
+    1
+  );
   assert.equal(result.prependContext.split("\n")[0], DELEGATE_REMINDER_MARKER);
 });
 
 test("scope resolver matches direct message parent sessions for dm:*", () => {
-  const resolver = new ScopeResolver({ scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR] });
+  const resolver = new ScopeResolver({
+    scope: [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR],
+  });
 
   assert.equal(resolver.isScopedParentSession(MAIN_SESSION_CONTEXT), true);
   assert.equal(resolver.isScopedParentSession(ROOT_SESSION_CONTEXT), true);
@@ -414,18 +583,29 @@ test("scope resolver supports dm:<id> for one direct message session", () => {
 
   assert.equal(resolver.isScopedParentSession(MAIN_SESSION_CONTEXT), true);
   assert.equal(resolver.isScopedParentSession(ROOT_SESSION_CONTEXT), true);
-  assert.equal(resolver.isScopedParentSession(OTHER_MAIN_SESSION_CONTEXT), false);
+  assert.equal(
+    resolver.isScopedParentSession(OTHER_MAIN_SESSION_CONTEXT),
+    false
+  );
 });
 
 test("scope resolver rejects dm:any instead of treating it as a wildcard", () => {
   const resolver = new ScopeResolver({ scope: ["dm:any"] });
 
   assert.equal(resolver.isScopedParentSession(MAIN_SESSION_CONTEXT), false);
-  assert.equal(resolver.isScopedParentSession(OTHER_MAIN_SESSION_CONTEXT), false);
+  assert.equal(
+    resolver.isScopedParentSession(OTHER_MAIN_SESSION_CONTEXT),
+    false
+  );
 });
 
 test("scope resolver fails closed for missing, empty, unknown, or mixed invalid scope", () => {
-  for (const scope of [[], ["dm:"], [""], [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR, "dm:"]]) {
+  for (const scope of [
+    [],
+    ["dm:"],
+    [""],
+    [DIRECT_MESSAGE_ALL_SCOPE_SELECTOR, "dm:"],
+  ]) {
     const resolver = new ScopeResolver({ scope });
     assert.equal(resolver.isScopedParentSession(MAIN_SESSION_CONTEXT), false);
   }
@@ -435,82 +615,149 @@ test("child and worker sessions do not inherit parent scope", () => {
   const adapter = createAdapter();
   const task = "Synthetic task";
 
-  assert.equal(adapter.beforePromptBuild({ prompt: "Synthetic prompt" }, CHILD_SESSION_CONTEXT), undefined);
   assert.equal(
-    adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task } }, CHILD_SESSION_CONTEXT),
-    undefined,
+    adapter.beforePromptBuild(
+      { prompt: "Synthetic prompt" },
+      CHILD_SESSION_CONTEXT
+    ),
+    undefined
+  );
+  assert.equal(
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: { task } },
+      CHILD_SESSION_CONTEXT
+    ),
+    undefined
   );
 });
 
 test("scoped parent sessions inject the delegate reminder", () => {
   const adapter = createAdapter();
 
-  assert.deepEqual(adapter.beforePromptBuild({ prompt: "Hello", messages: [] }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
-  });
-  assert.deepEqual(adapter.beforePromptBuild({ prompt: "Hello", messages: [] }, ROOT_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
-  });
+  assert.deepEqual(
+    adapter.beforePromptBuild(
+      { prompt: "Hello", messages: [] },
+      MAIN_SESSION_CONTEXT
+    ),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
+  assert.deepEqual(
+    adapter.beforePromptBuild(
+      { prompt: "Hello", messages: [] },
+      ROOT_SESSION_CONTEXT
+    ),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
 });
 
 test("unscoped contexts skip reminder injection", () => {
   const adapter = createAdapter();
 
   for (const { name, ctx } of UNSCOPED_CONTEXTS) {
-    assert.equal(adapter.beforePromptBuild({ prompt: name, messages: [] }, ctx), undefined, name);
+    assert.equal(
+      adapter.beforePromptBuild({ prompt: name, messages: [] }, ctx),
+      undefined,
+      name
+    );
   }
 });
 
-
 test("plugin config dm:<id> scope activates only that direct message session", () => {
-  const adapter = createAdapter({ pluginConfig: { scope: [`dm:${SYNTHETIC_DIRECT_ID}`] } });
-
-  assert.deepEqual(adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
+  const adapter = createAdapter({
+    pluginConfig: { scope: [`dm:${SYNTHETIC_DIRECT_ID}`] },
   });
-  assert.equal(adapter.beforePromptBuild({ prompt: "Hello" }, OTHER_MAIN_SESSION_CONTEXT), undefined);
+
+  assert.deepEqual(
+    adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
+  assert.equal(
+    adapter.beforePromptBuild({ prompt: "Hello" }, OTHER_MAIN_SESSION_CONTEXT),
+    undefined
+  );
 });
 
 test("invalid plugin config fails closed and does not activate hooks", () => {
-  const adapter = createAdapter({ pluginConfig: { targetDirectIds: ["synthetic-direct"] } });
+  const adapter = createAdapter({
+    pluginConfig: { targetDirectIds: ["synthetic-direct"] },
+  });
 
-  assert.equal(adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT), undefined);
   assert.equal(
-    adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task: "Synthetic task" } }, MAIN_SESSION_CONTEXT),
-    undefined,
+    adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT),
+    undefined
+  );
+  assert.equal(
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: { task: "Synthetic task" } },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
   );
 });
 
 test("promptReminder feature gate disables only prompt injection", () => {
-  const adapter = createAdapter({ pluginConfig: { features: { promptReminder: false } } });
+  const adapter = createAdapter({
+    pluginConfig: { features: { promptReminder: false } },
+  });
   const task = "Synthetic task";
 
-  assert.equal(adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT), undefined);
-  assertWrapped(adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task } }, MAIN_SESSION_CONTEXT), task);
+  assert.equal(
+    adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT),
+    undefined
+  );
+  assertWrapped(
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: { task } },
+      MAIN_SESSION_CONTEXT
+    ),
+    task
+  );
 });
 
 test("taskWrapping feature gate disables only sessions_spawn wrapping", () => {
-  const adapter = createAdapter({ pluginConfig: { features: { taskWrapping: false } } });
-
-  assert.deepEqual(adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
+  const adapter = createAdapter({
+    pluginConfig: { features: { taskWrapping: false } },
   });
+
+  assert.deepEqual(
+    adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
   assert.equal(
-    adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task: "Synthetic task" } }, MAIN_SESSION_CONTEXT),
-    undefined,
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: { task: "Synthetic task" } },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
   );
 });
 
 test("forthrightCommunication feature gate preserves the original task sandwich", () => {
-  const adapter = createAdapter({ pluginConfig: { features: { forthrightCommunication: false } } });
+  const adapter = createAdapter({
+    pluginConfig: { features: { forthrightCommunication: false } },
+  });
   const task = "Synthetic task\nRun checks";
 
-  assert.deepEqual(adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
-  });
+  assert.deepEqual(
+    adapter.beforePromptBuild({ prompt: "Hello" }, MAIN_SESSION_CONTEXT),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
   assertLegacyWrapped(
-    adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task } }, MAIN_SESSION_CONTEXT),
-    task,
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: { task } },
+      MAIN_SESSION_CONTEXT
+    ),
+    task
   );
 });
 
@@ -527,7 +774,10 @@ test("delimiter and marker collisions in the original task do not bypass forthri
     "Tail instructions",
   ].join("\n");
 
-  const result = adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task: originalTask } }, MAIN_SESSION_CONTEXT);
+  const result = adapter.beforeToolCall(
+    { toolName: "sessions_spawn", params: { task: originalTask } },
+    MAIN_SESSION_CONTEXT
+  );
 
   assertWrapped(result, originalTask);
   assert.equal(countTaskSandwichDelimiters(result.params.task, "BEGIN"), 1);
@@ -535,7 +785,9 @@ test("delimiter and marker collisions in the original task do not bypass forthri
 });
 
 test("forthrightCommunication false still wraps collision-heavy tasks with the legacy sandwich", () => {
-  const adapter = createAdapter({ pluginConfig: { features: { forthrightCommunication: false } } });
+  const adapter = createAdapter({
+    pluginConfig: { features: { forthrightCommunication: false } },
+  });
   const originalTask = [
     "Legacy task",
     TASK_SANDWICH_BEGIN_DELIMITER,
@@ -544,7 +796,10 @@ test("forthrightCommunication false still wraps collision-heavy tasks with the l
     "Done",
   ].join("\n");
 
-  const result = adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task: originalTask } }, MAIN_SESSION_CONTEXT);
+  const result = adapter.beforeToolCall(
+    { toolName: "sessions_spawn", params: { task: originalTask } },
+    MAIN_SESSION_CONTEXT
+  );
 
   assertLegacyWrapped(result, originalTask);
   assert.equal(countTaskSandwichDelimiters(result.params.task, "BEGIN"), 1);
@@ -569,16 +824,19 @@ test("scoped parent sessions_spawn.task is wrapped with the task sandwich", () =
     {
       toolName: "sessions_spawn",
       params: {
-        label: "delegate-mode-enforcer",
+        label: "headcrab",
         task: originalTask,
       },
     },
-    MAIN_SESSION_CONTEXT,
+    MAIN_SESSION_CONTEXT
   );
 
   assertWrapped(result, originalTask);
-  assert.equal(result.params.label, "delegate-mode-enforcer");
-  assert.equal(result.params.runTimeoutSeconds, DEFAULT_SUBAGENT_RUN_TIMEOUT_SECONDS);
+  assert.equal(result.params.label, "headcrab");
+  assert.equal(
+    result.params.runTimeoutSeconds,
+    DEFAULT_SUBAGENT_RUN_TIMEOUT_SECONDS
+  );
 });
 
 test("sessions_spawn.runTimeoutSeconds preserves explicit shorter positive values", () => {
@@ -591,7 +849,7 @@ test("sessions_spawn.runTimeoutSeconds preserves explicit shorter positive value
         runTimeoutSeconds: 900,
       },
     },
-    MAIN_SESSION_CONTEXT,
+    MAIN_SESSION_CONTEXT
   );
 
   assertWrapped(result, "Synthetic task");
@@ -608,7 +866,7 @@ test("sessions_spawn.runTimeoutSeconds caps unlimited and over-max values at 180
         runTimeoutSeconds: 0,
       },
     },
-    MAIN_SESSION_CONTEXT,
+    MAIN_SESSION_CONTEXT
   );
   const overMax = adapter.beforeToolCall(
     {
@@ -618,13 +876,19 @@ test("sessions_spawn.runTimeoutSeconds caps unlimited and over-max values at 180
         runTimeoutSeconds: 3600,
       },
     },
-    MAIN_SESSION_CONTEXT,
+    MAIN_SESSION_CONTEXT
   );
 
   assertWrapped(unlimited, "Synthetic task");
   assertWrapped(overMax, "Synthetic task");
-  assert.equal(unlimited.params.runTimeoutSeconds, MAX_SUBAGENT_RUN_TIMEOUT_SECONDS);
-  assert.equal(overMax.params.runTimeoutSeconds, MAX_SUBAGENT_RUN_TIMEOUT_SECONDS);
+  assert.equal(
+    unlimited.params.runTimeoutSeconds,
+    MAX_SUBAGENT_RUN_TIMEOUT_SECONDS
+  );
+  assert.equal(
+    overMax.params.runTimeoutSeconds,
+    MAX_SUBAGENT_RUN_TIMEOUT_SECONDS
+  );
 });
 
 test("unscoped parent contexts do not wrap sessions_spawn.task", () => {
@@ -632,9 +896,12 @@ test("unscoped parent contexts do not wrap sessions_spawn.task", () => {
 
   for (const { name, ctx } of UNSCOPED_CONTEXTS) {
     assert.equal(
-      adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task: "Synthetic task" } }, ctx),
+      adapter.beforeToolCall(
+        { toolName: "sessions_spawn", params: { task: "Synthetic task" } },
+        ctx
+      ),
       undefined,
-      name,
+      name
     );
   }
 });
@@ -644,13 +911,19 @@ test("nested child spawns are not wrapped unless that child independently matche
   const task = "Synthetic task";
 
   assert.equal(
-    adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task } }, CHILD_SESSION_CONTEXT),
-    undefined,
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: { task } },
+      CHILD_SESSION_CONTEXT
+    ),
+    undefined
   );
 
   assertWrapped(
-    adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task } }, MAIN_SESSION_CONTEXT),
-    task,
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: { task } },
+      MAIN_SESSION_CONTEXT
+    ),
+    task
   );
 });
 
@@ -658,16 +931,28 @@ test("before_prompt_build logs sanitized applied and skipped outcomes", () => {
   const { logger, calls } = createCapturingLogger();
   const adapter = createAdapter({ logger });
 
-  assert.deepEqual(adapter.beforePromptBuild({ prompt: "Synthetic prompt", messages: [] }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
-  });
-  assert.equal(adapter.beforePromptBuild({ prompt: "Synthetic prompt", messages: [] }, CHILD_SESSION_CONTEXT), undefined);
+  assert.deepEqual(
+    adapter.beforePromptBuild(
+      { prompt: "Synthetic prompt", messages: [] },
+      MAIN_SESSION_CONTEXT
+    ),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
+  assert.equal(
+    adapter.beforePromptBuild(
+      { prompt: "Synthetic prompt", messages: [] },
+      CHILD_SESSION_CONTEXT
+    ),
+    undefined
+  );
 
   assert.equal(calls.length, 2);
   assertSanitizedLogCall(calls[0], {
     level: "info",
     payload: {
-      plugin: "delegate-mode-enforcer",
+      plugin: "headcrab",
       n: 1,
       hook: "before_prompt_build",
       stage: "hook",
@@ -678,7 +963,7 @@ test("before_prompt_build logs sanitized applied and skipped outcomes", () => {
   assertSanitizedLogCall(calls[1], {
     level: "debug",
     payload: {
-      plugin: "delegate-mode-enforcer",
+      plugin: "headcrab",
       n: 2,
       hook: "before_prompt_build",
       stage: "hook",
@@ -697,13 +982,16 @@ test("before_tool_call logs sanitized applied and skipped outcomes", () => {
     {
       toolName: "sessions_spawn",
       params: {
-        label: "delegate-mode-enforcer",
+        label: "headcrab",
         task,
       },
     },
-    MAIN_SESSION_CONTEXT,
+    MAIN_SESSION_CONTEXT
   );
-  const skipped = adapter.beforeToolCall({ toolName: "exec", params: { command: "pwd" } }, MAIN_SESSION_CONTEXT);
+  const skipped = adapter.beforeToolCall(
+    { toolName: "exec", params: { command: "pwd" } },
+    MAIN_SESSION_CONTEXT
+  );
 
   assert.ok(applied);
   assert.equal(skipped, undefined);
@@ -711,7 +999,7 @@ test("before_tool_call logs sanitized applied and skipped outcomes", () => {
   assertSanitizedLogCall(calls[0], {
     level: "info",
     payload: {
-      plugin: "delegate-mode-enforcer",
+      plugin: "headcrab",
       n: 1,
       hook: "before_tool_call",
       stage: "hook",
@@ -723,7 +1011,7 @@ test("before_tool_call logs sanitized applied and skipped outcomes", () => {
   assertSanitizedLogCall(calls[1], {
     level: "debug",
     payload: {
-      plugin: "delegate-mode-enforcer",
+      plugin: "headcrab",
       n: 2,
       hook: "before_tool_call",
       stage: "hook",
@@ -741,50 +1029,71 @@ test("before_tool_call logs bounded skipped reasons", () => {
       toolName: "sessions_spawn",
       params: { task: "Synthetic task", mode: "run" },
     },
-    MAIN_SESSION_CONTEXT,
+    MAIN_SESSION_CONTEXT
   );
 
   assert.ok(first);
   assert.equal(
-    adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task: 42 } }, MAIN_SESSION_CONTEXT),
-    undefined,
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: { task: 42 } },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
   );
-  assert.equal(adapter.beforeToolCall({ toolName: "sessions_spawn", params: first.params }, MAIN_SESSION_CONTEXT), undefined);
+  assert.equal(
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: first.params },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
+  );
 
   assert.deepEqual(
-    calls.map(({ level, payload }) => [level, payload.n, payload.outcome, payload.reason, payload.variant ?? null]),
+    calls.map(({ level, payload }) => [
+      level,
+      payload.n,
+      payload.outcome,
+      payload.reason,
+      payload.variant ?? null,
+    ]),
     [
       ["info", 1, "applied", "task_sandwich_applied", "forthright"],
       ["debug", 2, "skipped", "invalid_sessions_spawn_task", null],
       ["debug", 3, "skipped", "transform_not_applicable", null],
-    ],
+    ]
   );
   for (const call of calls) {
     assert.deepEqual(
       Object.keys(call.payload).sort(),
       call.payload.variant
         ? ["hook", "n", "outcome", "plugin", "reason", "stage", "variant"]
-        : ["hook", "n", "outcome", "plugin", "reason", "stage"],
+        : ["hook", "n", "outcome", "plugin", "reason", "stage"]
     );
   }
 });
 
 test("before_tool_call logs bounded legacy variant when forthright communication is disabled", () => {
   const { logger, calls } = createCapturingLogger();
-  const adapter = createAdapter({ logger, pluginConfig: { features: { forthrightCommunication: false } } });
+  const adapter = createAdapter({
+    logger,
+    pluginConfig: { features: { forthrightCommunication: false } },
+  });
 
   assertLegacyWrapped(
     adapter.beforeToolCall(
-      { toolName: "sessions_spawn", params: { task: "Synthetic task", mode: "run" } },
-      MAIN_SESSION_CONTEXT,
+      {
+        toolName: "sessions_spawn",
+        params: { task: "Synthetic task", mode: "run" },
+      },
+      MAIN_SESSION_CONTEXT
     ),
-    "Synthetic task",
+    "Synthetic task"
   );
 
   assertSanitizedLogCall(calls[0], {
     level: "info",
     payload: {
-      plugin: "delegate-mode-enforcer",
+      plugin: "headcrab",
       n: 1,
       hook: "before_tool_call",
       stage: "hook",
@@ -799,16 +1108,37 @@ test("missing and partial loggers do not change hook behavior", () => {
   const noLoggerAdapter = createAdapter();
   const partialLoggerAdapter = createAdapter({ logger: { info() {} } });
 
-  assert.deepEqual(noLoggerAdapter.beforePromptBuild({ prompt: "Synthetic prompt" }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
-  });
-  assert.equal(noLoggerAdapter.beforeToolCall({ toolName: "exec", params: { command: "pwd" } }, MAIN_SESSION_CONTEXT), undefined);
-  assert.deepEqual(partialLoggerAdapter.beforePromptBuild({ prompt: "Synthetic prompt" }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
-  });
+  assert.deepEqual(
+    noLoggerAdapter.beforePromptBuild(
+      { prompt: "Synthetic prompt" },
+      MAIN_SESSION_CONTEXT
+    ),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
   assert.equal(
-    partialLoggerAdapter.beforeToolCall({ toolName: "exec", params: { command: "pwd" } }, MAIN_SESSION_CONTEXT),
-    undefined,
+    noLoggerAdapter.beforeToolCall(
+      { toolName: "exec", params: { command: "pwd" } },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
+  );
+  assert.deepEqual(
+    partialLoggerAdapter.beforePromptBuild(
+      { prompt: "Synthetic prompt" },
+      MAIN_SESSION_CONTEXT
+    ),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
+  assert.equal(
+    partialLoggerAdapter.beforeToolCall(
+      { toolName: "exec", params: { command: "pwd" } },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
   );
 });
 
@@ -822,21 +1152,39 @@ test("throwing logger accessor does not change hook behavior", () => {
         }
         return undefined;
       },
-    },
+    }
   );
   const adapter = createAdapter({ logger: throwingAccessorLogger });
 
-  assert.deepEqual(adapter.beforePromptBuild({ prompt: "Synthetic prompt" }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
-  });
-  assert.equal(adapter.beforePromptBuild({ prompt: "Synthetic prompt" }, CHILD_SESSION_CONTEXT), undefined);
+  assert.deepEqual(
+    adapter.beforePromptBuild(
+      { prompt: "Synthetic prompt" },
+      MAIN_SESSION_CONTEXT
+    ),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
+  assert.equal(
+    adapter.beforePromptBuild(
+      { prompt: "Synthetic prompt" },
+      CHILD_SESSION_CONTEXT
+    ),
+    undefined
+  );
   assert.ok(
     adapter.beforeToolCall(
       { toolName: "sessions_spawn", params: { task: "Synthetic task" } },
-      MAIN_SESSION_CONTEXT,
-    ),
+      MAIN_SESSION_CONTEXT
+    )
   );
-  assert.equal(adapter.beforeToolCall({ toolName: "exec", params: { command: "pwd" } }, MAIN_SESSION_CONTEXT), undefined);
+  assert.equal(
+    adapter.beforeToolCall(
+      { toolName: "exec", params: { command: "pwd" } },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
+  );
 });
 
 test("runtime api logger accessor failure does not prevent hook registration", () => {
@@ -855,16 +1203,22 @@ test("runtime api logger accessor failure does not prevent hook registration", (
 
   assert.deepEqual(
     registrations.map(({ hookName }) => hookName),
-    ["before_prompt_build", "before_tool_call"],
+    ["before_prompt_build", "before_tool_call"]
   );
-  assert.deepEqual(registrations[0].handler({ prompt: "Synthetic prompt" }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
-  });
+  assert.deepEqual(
+    registrations[0].handler(
+      { prompt: "Synthetic prompt" },
+      MAIN_SESSION_CONTEXT
+    ),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
   assert.ok(
     registrations[1].handler(
       { toolName: "sessions_spawn", params: { task: "Synthetic task" } },
-      MAIN_SESSION_CONTEXT,
-    ),
+      MAIN_SESSION_CONTEXT
+    )
   );
 });
 
@@ -882,17 +1236,35 @@ test("throwing logger does not change hook behavior", () => {
   };
   const adapter = createAdapter({ logger: throwingLogger });
 
-  assert.deepEqual(adapter.beforePromptBuild({ prompt: "Synthetic prompt" }, MAIN_SESSION_CONTEXT), {
-    prependContext: DELEGATE_REMINDER_BLOCK,
-  });
-  assert.equal(adapter.beforePromptBuild({ prompt: "Synthetic prompt" }, CHILD_SESSION_CONTEXT), undefined);
+  assert.deepEqual(
+    adapter.beforePromptBuild(
+      { prompt: "Synthetic prompt" },
+      MAIN_SESSION_CONTEXT
+    ),
+    {
+      prependContext: DELEGATE_REMINDER_BLOCK,
+    }
+  );
+  assert.equal(
+    adapter.beforePromptBuild(
+      { prompt: "Synthetic prompt" },
+      CHILD_SESSION_CONTEXT
+    ),
+    undefined
+  );
   assert.ok(
     adapter.beforeToolCall(
       { toolName: "sessions_spawn", params: { task: "Synthetic task" } },
-      MAIN_SESSION_CONTEXT,
-    ),
+      MAIN_SESSION_CONTEXT
+    )
   );
-  assert.equal(adapter.beforeToolCall({ toolName: "exec", params: { command: "pwd" } }, MAIN_SESSION_CONTEXT), undefined);
+  assert.equal(
+    adapter.beforeToolCall(
+      { toolName: "exec", params: { command: "pwd" } },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
+  );
 });
 
 test("hook failures log sanitized error outcomes and preserve thrown errors", () => {
@@ -907,12 +1279,19 @@ test("hook failures log sanitized error outcomes and preserve thrown errors", ()
     },
   });
 
-  assert.throws(() => adapter.beforePromptBuild({ prompt: "Synthetic prompt" }, MAIN_SESSION_CONTEXT), expectedError);
+  assert.throws(
+    () =>
+      adapter.beforePromptBuild(
+        { prompt: "Synthetic prompt" },
+        MAIN_SESSION_CONTEXT
+      ),
+    expectedError
+  );
   assert.equal(calls.length, 1);
   assertSanitizedLogCall(calls[0], {
     level: "error",
     payload: {
-      plugin: "delegate-mode-enforcer",
+      plugin: "headcrab",
       n: 1,
       hook: "before_prompt_build",
       stage: "hook",
@@ -943,20 +1322,45 @@ test("throwing logger during hook failure preserves original thrown error", () =
   });
 
   assert.throws(
-    () => adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task: "Synthetic task" } }, MAIN_SESSION_CONTEXT),
-    expectedError,
+    () =>
+      adapter.beforeToolCall(
+        { toolName: "sessions_spawn", params: { task: "Synthetic task" } },
+        MAIN_SESSION_CONTEXT
+      ),
+    expectedError
   );
 });
 
 test("malformed before_tool_call events no-op", () => {
   const adapter = createAdapter();
 
-  assert.equal(adapter.beforeToolCall(undefined, MAIN_SESSION_CONTEXT), undefined);
+  assert.equal(
+    adapter.beforeToolCall(undefined, MAIN_SESSION_CONTEXT),
+    undefined
+  );
   assert.equal(adapter.beforeToolCall(null, MAIN_SESSION_CONTEXT), undefined);
   assert.equal(adapter.beforeToolCall({}, MAIN_SESSION_CONTEXT), undefined);
-  assert.equal(adapter.beforeToolCall({ toolName: "sessions_spawn" }, MAIN_SESSION_CONTEXT), undefined);
-  assert.equal(adapter.beforeToolCall({ toolName: "sessions_spawn", params: null }, MAIN_SESSION_CONTEXT), undefined);
-  assert.equal(adapter.beforeToolCall({ toolName: "sessions_spawn", params: { task: 42 } }, MAIN_SESSION_CONTEXT), undefined);
+  assert.equal(
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn" },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
+  );
+  assert.equal(
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: null },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
+  );
+  assert.equal(
+    adapter.beforeToolCall(
+      { toolName: "sessions_spawn", params: { task: 42 } },
+      MAIN_SESSION_CONTEXT
+    ),
+    undefined
+  );
 });
 
 test("already sandwiched sessions_spawn.task is not wrapped again", () => {
@@ -983,7 +1387,16 @@ test("already sandwiched sessions_spawn.task normalizes missing and invalid runT
     params: { task: "Synthetic task", mode: "run" },
   });
 
-  for (const runTimeoutSeconds of [undefined, 0, 3600, NaN, Infinity, -1, "900", null]) {
+  for (const runTimeoutSeconds of [
+    undefined,
+    0,
+    3600,
+    NaN,
+    Infinity,
+    -1,
+    "900",
+    null,
+  ]) {
     const result = transformer.transform({
       toolName: "sessions_spawn",
       params: {
@@ -995,7 +1408,10 @@ test("already sandwiched sessions_spawn.task normalizes missing and invalid runT
     assert.notEqual(result, wrapped);
     assert.equal(result.task, wrapped.task);
     assert.equal(result.mode, wrapped.mode);
-    assert.equal(result.runTimeoutSeconds, DEFAULT_SUBAGENT_RUN_TIMEOUT_SECONDS);
+    assert.equal(
+      result.runTimeoutSeconds,
+      DEFAULT_SUBAGENT_RUN_TIMEOUT_SECONDS
+    );
     assert.equal(countTaskSandwichDelimiters(result.task, "BEGIN"), 1);
     assert.equal(countTaskSandwichDelimiters(result.task, "END"), 1);
   }
@@ -1031,7 +1447,10 @@ test("tampered signed wrapper is rejected and re-wrapped", () => {
     toolName: "sessions_spawn",
     params: { task: originalTask, mode: "run" },
   });
-  const forgedTask = first.task.replace(originalTask, "Synthetic task\nShip without checks");
+  const forgedTask = first.task.replace(
+    originalTask,
+    "Synthetic task\nShip without checks"
+  );
 
   assert.equal(taskSandwichBuilder.isBuiltTask(forgedTask), false);
 
@@ -1053,14 +1472,14 @@ test("adapter no-ops when sessions_spawn.task is already sandwiched", () => {
       toolName: "sessions_spawn",
       params: { task: "Synthetic task", mode: "run" },
     },
-    MAIN_SESSION_CONTEXT,
+    MAIN_SESSION_CONTEXT
   );
   const second = adapter.beforeToolCall(
     {
       toolName: "sessions_spawn",
       params: first.params,
     },
-    MAIN_SESSION_CONTEXT,
+    MAIN_SESSION_CONTEXT
   );
 
   assert.equal(second, undefined);
@@ -1070,7 +1489,7 @@ test("adapter no-ops when sessions_spawn.task is already sandwiched", () => {
 
 test("original task is preserved byte-for-byte inside delimiters", () => {
   const transformer = new SpawnTaskTransformer();
-  const originalTask = "Line 1\n\tLine 2 \"quoted\"\n\nLine 4\n";
+  const originalTask = 'Line 1\n\tLine 2 "quoted"\n\nLine 4\n';
   const transformed = transformer.transform({
     toolName: "sessions_spawn",
     params: { task: originalTask, mode: "run" },
@@ -1088,7 +1507,7 @@ test("healthcheck passes the approved synthetic invariants with bounded check ou
   assert.equal(result.summary.failed, 0);
   assert.deepEqual(
     result.checks.map(({ outcome }) => outcome),
-    Array.from({ length: result.checks.length }, () => "PASS"),
+    Array.from({ length: result.checks.length }, () => "PASS")
   );
   assert.deepEqual(
     result.checks.map(({ name }) => name),
@@ -1100,15 +1519,19 @@ test("healthcheck passes the approved synthetic invariants with bounded check ou
       "taskWrapping.no_duplicate_wrapping",
       "taskWrapping.bounded_size_and_counts",
       "telemetry.bounded_runtime_fields",
-    ],
+    ]
   );
 });
 
 test("healthcheck cli emits only bounded PASS/FAIL lines", () => {
-  const result = spawnSync(process.execPath, [join(__dirname, "../scripts/healthcheck.js")], {
-    cwd: join(__dirname, ".."),
-    encoding: "utf8",
-  });
+  const result = spawnSync(
+    process.execPath,
+    [join(__dirname, "../scripts/healthcheck.js")],
+    {
+      cwd: join(__dirname, ".."),
+      encoding: "utf8",
+    }
+  );
 
   assert.equal(result.status, 0);
   assert.equal(result.stderr, "");
@@ -1134,7 +1557,7 @@ test("delegate mode plugin registers both required hooks", () => {
 
   assert.deepEqual(
     registrations.map(({ hookName }) => hookName),
-    ["before_prompt_build", "before_tool_call"],
+    ["before_prompt_build", "before_tool_call"]
   );
   assert.equal(typeof registrations[0].handler, "function");
   assert.equal(typeof registrations[1].handler, "function");

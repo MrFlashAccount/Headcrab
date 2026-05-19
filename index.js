@@ -5,7 +5,7 @@ import { DelegateModePlugin } from "./src/delegate-mode-plugin.js";
 const delegateModePlugin = new DelegateModePlugin();
 
 const pluginEntry = definePluginEntry({
-  id: "delegate-mode-enforcer",
+  id: "headcrab",
   name: "Headcrab",
   description: "A small OpenClaw plugin for worker-first delegation.",
   register(api) {
