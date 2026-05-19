@@ -529,6 +529,8 @@ test("reminder renderer returns a stable single block", () => {
   assert.equal(renderer.render(), DELEGATE_REMINDER_BLOCK);
 });
 
+
+
 test("repeated prompt builds produce independent single blocks with no accumulation", () => {
   const adapter = createAdapter();
   const builds = Array.from({ length: 3 }, () =>
